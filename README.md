@@ -2,3 +2,404 @@
 Have a music project and still deciding which tracks should make the cut? Use this free tool to decide what to keep and to shelf.
 
 The code and design of this page are the copyright of PAQUE. You're welcome to use the tool for your own projects, but the underlying code may not be copied, reproduced, redistributed or repackaged.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Review Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#141a1f; --panel:#1c242b; --panel2:#232d35; --line:#2f3b45;
+  --ink:#eef2f4; --ink2:#9fb0bc; --ink3:#66788a;
+  --green:#4fd18b; --amber:#f2a93b; --red:#ef5b5b; --blue:#5aa7ff;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.disp{font-family:'Barlow Condensed','Arial Narrow',sans-serif;letter-spacing:.01em}
+.wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+
+/* header */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.titlewrap{flex:1 1 auto;min-width:200px}
+.titlewrap label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:3px;font-weight:600}
+#projTitle{width:100%;background:transparent;border:none;border-bottom:1px dashed var(--line);color:var(--ink);font-family:'Barlow Condensed';font-size:34px;font-weight:800;padding:2px 0;line-height:1}
+#projTitle::placeholder{color:var(--ink3);opacity:.55}
+#projTitle:focus{outline:none;border-bottom-color:var(--blue)}
+.sub{color:var(--ink3);font-weight:600;font-family:'Barlow Condensed';font-size:20px}
+.tally{display:flex;gap:6px}
+.pill{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--panel);font-family:'Barlow Condensed';font-weight:800;font-size:18px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.g{background:var(--green)} .dot.a{background:var(--amber)} .dot.r{background:var(--red)}
+
+/* panels */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.panel h2{margin:0 0 12px;font-size:22px;font-weight:800;text-transform:uppercase;color:var(--ink2)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:4px;font-weight:600}
+input,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:10px 12px;font:inherit;font-size:16px}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+textarea{min-height:64px;resize:vertical}
+
+/* decision steps */
+.step{border-left:3px solid var(--line);padding:12px 14px;margin:0 0 10px;border-radius:0 8px 8px 0;background:var(--panel2);opacity:.35;transition:opacity .2s}
+.step.active,.step.done{opacity:1}
+.step.done{border-left-color:var(--ink3)}
+.step.active{border-left-color:var(--blue)}
+.step .q{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.step .q h3{margin:0;font-size:20px;font-weight:800;text-transform:uppercase}
+.step .q small{color:var(--ink3);font-family:'Barlow Condensed';font-size:15px;font-weight:600;text-transform:uppercase}
+.step p{margin:0 0 10px;color:var(--ink2);font-size:15px}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1 1 auto;min-width:110px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:12px 10px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+.opt:hover{border-color:var(--ink3)}
+.opt.sel{border-width:2px}
+.opt.sel.yes{border-color:var(--green);background:rgba(79,209,139,.12)}
+.opt.sel.minor{border-color:var(--amber);background:rgba(242,169,59,.12)}
+.opt.sel.major{border-color:var(--red);background:rgba(239,91,91,.12)}
+.opt:disabled{cursor:default}
+.note{margin-top:10px}
+.note textarea{min-height:52px}
+
+/* verdict */
+.verdict{border-radius:var(--radius);padding:16px;margin-bottom:14px;display:none;border:2px solid var(--line)}
+.verdict.show{display:block}
+.verdict.g{border-color:var(--green);background:rgba(79,209,139,.08)}
+.verdict.a{border-color:var(--amber);background:rgba(242,169,59,.08)}
+.verdict.r{border-color:var(--red);background:rgba(239,91,91,.08)}
+.verdict .big{font-family:'Barlow Condensed';font-size:30px;font-weight:800;text-transform:uppercase;line-height:1;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.verdict .big .dot{width:16px;height:16px}
+.verdict ul{margin:6px 0 0;padding-left:18px;color:var(--ink2);font-size:15px}
+.verdict ul:empty{display:none}
+
+/* buttons */
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button.btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:12px 16px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+button.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.btn.danger{color:var(--red);border-color:rgba(239,91,91,.4)}
+button.btn:disabled{opacity:.4;cursor:not-allowed}
+.sm{padding:7px 10px;font-size:14px}
+
+/* list + groups */
+.list{display:flex;flex-direction:column;gap:6px}
+.grouphd{display:flex;align-items:center;gap:8px;font-family:'Barlow Condensed';font-weight:800;font-size:19px;text-transform:uppercase;letter-spacing:.03em;margin:14px 0 2px;color:var(--ink2)}
+.grouphd:first-child{margin-top:0}
+.grouphd .gcount{color:var(--ink3);font-size:15px}
+.grouphd.g{color:var(--green)}.grouphd.a{color:var(--amber)}.grouphd.r{color:var(--red)}
+.item{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.item .dot{width:14px;height:14px}
+.item .t{font-family:'Barlow Condensed';font-weight:800;font-size:19px;line-height:1.1}
+.item .m{color:var(--ink3);font-size:13px}
+.item .acts{display:flex;gap:4px}
+.item .acts button{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:6px;padding:5px 8px;font:inherit;font-size:13px;cursor:pointer}
+.empty{color:var(--ink3);font-size:15px;padding:8px 0}
+.hint{color:var(--ink3);font-size:13px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+
+/* intro / gate */
+#intro{max-width:720px;margin:0 auto;padding:36px 16px 80px}
+#intro h1{font-size:40px;font-weight:800;margin:0 0 4px;line-height:1}
+#intro .lede{color:var(--ink2);font-size:17px;margin:0 0 22px}
+.how{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.how h2{margin:0 0 12px;font-size:22px;font-weight:800;text-transform:uppercase;color:var(--ink2)}
+.how ol{margin:0;padding-left:20px}
+.how li{margin-bottom:10px;color:var(--ink)}
+.how li b{color:var(--ink)}
+.stagerow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.stage{flex:1 1 150px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+.stage .n{font-family:'Barlow Condensed';font-weight:800;text-transform:uppercase;font-size:16px;margin-bottom:2px}
+.stage.g .n{color:var(--green)}.stage.a .n{color:var(--amber)}.stage.r .n{color:var(--red)}
+.stage small{color:var(--ink3);font-size:13px}
+.legal{margin-top:20px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-size:13.5px;color:var(--ink2)}
+.agree{display:flex;align-items:flex-start;gap:10px;margin-top:14px;cursor:pointer;font-size:15px;color:var(--ink)}
+.agree input{width:20px;height:20px;margin-top:1px;accent-color:var(--green);flex:none}
+#startBtn{margin-top:18px}
+.hidden{display:none!important}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.opts{flex-direction:column}#intro h1{font-size:32px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ============ INTRO / HOW-TO ============ -->
+<div id="intro">
+  <h1>Track Review Tool</h1>
+  <p class="lede">A simple way to decide which tracks make the cut for your next project.</p>
+
+  <div class="how">
+    <h2>How it works</h2>
+    <ol>
+      <li>Give your project a title, then enter each track's details — <b>name, BPM, key, co-producers and any feature.</b></li>
+      <li>Work down three questions for that track: does it pass the <b>vibe check</b>, are the <b>lyrics</b> strong enough, and is the <b>beat</b> the right one? The tool weighs your answers and gives each track a verdict.</li>
+      <li><b>Save the track</b> to your list and move on to the next one, until you've worked through everything and can see clearly what's in and what's out.</li>
+      <li>When you're ready, <b>export to a Word document</b> for a clean record, <b>save the session</b> as a file you can load back later if you're not finished, or <b>reset</b> the page to start a fresh project down the line.</li>
+    </ol>
+
+    <div class="stagerow">
+      <div class="stage g"><div class="n">Album ready</div><small>Passes all three — store it.</small></div>
+      <div class="stage a"><div class="n">Almost ready</div><small>One major change needed, then review again.</small></div>
+      <div class="stage r"><div class="n">Not ready</div><small>Fails the vibe check, or needs bigger work.</small></div>
+    </div>
+
+    <div class="legal">
+      The code and design of this page are the copyright of PAQUE. You're welcome to use the tool for your own projects, but the underlying code may not be copied, reproduced, redistributed or repackaged.
+    </div>
+
+    <label class="agree"><input type="checkbox" id="agreeBox"><span>I understand and agree that the code on this page is copyrighted by PAQUE and may not be replicated.</span></label>
+
+    <button class="btn primary hidden" id="startBtn" style="display:none">Start reviewing →</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="wrap hidden" id="app">
+
+<header>
+  <div class="titlewrap">
+    <label for="projTitle">Project title</label>
+    <input id="projTitle" placeholder="Project title" autocomplete="off">
+  </div>
+  <div class="tally">
+    <div class="pill"><span class="dot g"></span><span id="tg">0</span></div>
+    <div class="pill"><span class="dot a"></span><span id="ta">0</span></div>
+    <div class="pill"><span class="dot r"></span><span id="tr">0</span></div>
+  </div>
+</header>
+
+<section class="panel">
+  <h2 id="formTitle">Track on deck</h2>
+  <div class="grid">
+    <div class="full"><label for="name">Track name</label><input id="name" placeholder="Input track name" autocomplete="off"></div>
+    <div><label for="bpm">BPM</label><input id="bpm" inputmode="numeric" placeholder="Input track BPM"></div>
+    <div><label for="key">Key</label><input id="key" placeholder="Input track key"></div>
+    <div class="full"><label for="prods">Co-producers</label><input id="prods" placeholder="Input co-producers"></div>
+    <div class="full"><label for="feat">Feature (optional)</label><input id="feat" placeholder="Input feature"></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Decision tree</h2>
+
+  <div class="step active" id="s1">
+    <div class="q"><h3>Vibe check</h3><small>gate</small></div>
+    <p>Does this track fit the project you're building? If not, nothing else matters.</p>
+    <div class="opts">
+      <button class="opt" data-step="vibe" data-val="yes">Yes — it belongs</button>
+      <button class="opt" data-step="vibe" data-val="no">No — cut it</button>
+    </div>
+  </div>
+
+  <div class="step" id="s2">
+    <div class="q"><h3>Lyrics</h3><small>craft</small></div>
+    <p>Are the lyrics finished? "Minor" = a line or a word. "Major" = a verse, a hook, or the whole angle.</p>
+    <div class="opts">
+      <button class="opt" data-step="lyrics" data-val="yes">Yes — done</button>
+      <button class="opt" data-step="lyrics" data-val="minor">Minor tweak</button>
+      <button class="opt" data-step="lyrics" data-val="major">Major rewrite</button>
+    </div>
+    <div class="note" id="n2" hidden><label for="lyricsNote">What needs to change?</label><textarea id="lyricsNote" placeholder="e.g. second verse loses the thread after bar 8"></textarea></div>
+  </div>
+
+  <div class="step" id="s3">
+    <div class="q"><h3>Beat</h3><small>selection</small></div>
+    <p>Is this the best beat for these lyrics? "Minor" = arrangement, drums, mix notes. "Replace" = a different beat entirely.</p>
+    <div class="opts">
+      <button class="opt" data-step="beat" data-val="yes">Yes — right beat</button>
+      <button class="opt" data-step="beat" data-val="minor">Minor tweak</button>
+      <button class="opt" data-step="beat" data-val="major">Replace beat</button>
+    </div>
+    <div class="note" id="n3" hidden><label for="beatNote">What needs to change?</label><textarea id="beatNote" placeholder="e.g. needs a switch-up before the last hook"></textarea></div>
+  </div>
+
+  <div class="note"><label for="gen">General notes (optional)</label><textarea id="gen" placeholder="Anything else worth remembering"></textarea></div>
+</section>
+
+<section class="verdict" id="verdict">
+  <p class="big"><span class="dot" id="vdot"></span><span id="vtext"></span></p>
+  <ul id="vlist"></ul>
+  <div class="row">
+    <button class="btn primary" id="saveBtn">Save track to list</button>
+    <button class="btn" id="clearBtn">Clear form</button>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Reviewed <span id="count"></span></h2>
+  <div class="list" id="list"></div>
+  <div class="empty" id="emptyMsg">No tracks reviewed yet. Fill in the track above and work down the tree.</div>
+  <div class="row">
+    <button class="btn primary" id="wordBtn">Export to Word</button>
+    <button class="btn" id="jsonBtn">Save session (.json)</button>
+    <button class="btn" id="loadBtn">Load session</button>
+    <input type="file" id="loadFile" accept=".json" hidden>
+    <button class="btn danger" id="resetBtn">Reset for new project</button>
+  </div>
+  <p class="hint">This page doesn't remember anything on its own. Export to Word or save the session before you close it. Load a saved session to carry on where you left off.</p>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+
+  // ---- intro gate ----
+  $('agreeBox').addEventListener('change',e=>{
+    const b=$('startBtn'); b.style.display=e.target.checked?'inline-block':'none';
+    b.classList.toggle('hidden',!e.target.checked);
+  });
+  $('startBtn').addEventListener('click',()=>{
+    $('intro').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    $('projTitle').focus();
+  });
+
+  let tracks=[]; let editing=null;
+  const ans={vibe:null,lyrics:null,beat:null};
+
+  function verdictFor(a){
+    if(a.vibe==='no') return {c:'r',label:'Not album ready',sub:'Failed the vibe check — cut from this project',flags:['Cut']};
+    if(a.lyrics===null||a.beat===null) return null;
+    const lyMaj=a.lyrics==='major', btMaj=a.beat==='major';
+    const flags=[];
+    if(a.lyrics==='minor') flags.push('Minor lyric tweak');
+    if(a.beat==='minor') flags.push('Minor beat tweak');
+    if(lyMaj) flags.push('Lyrics need a major rewrite');
+    if(btMaj) flags.push('Beat needs replacing');
+    if(lyMaj&&btMaj) return {c:'r',label:'Not quite album ready',sub:'Review again after both changes',flags};
+    if(lyMaj) return {c:'a',label:'Almost album ready',sub:'Review again once the lyrics are rewritten',flags};
+    if(btMaj) return {c:'a',label:'Almost album ready',sub:'Review again once the beat is replaced',flags};
+    return {c:'g',label:'Album ready',sub:flags.length?'Log the tweaks and store it':'Store it',flags};
+  }
+
+  function render(){
+    const s2on=ans.vibe==='yes', s3on=s2on&&ans.lyrics!==null;
+    $('s1').className='step '+(ans.vibe?'done':'active');
+    $('s2').className='step '+(!s2on?'':ans.lyrics?'done':'active');
+    $('s3').className='step '+(!s3on?'':ans.beat?'done':'active');
+    document.querySelectorAll('.opt').forEach(b=>{
+      const st=b.dataset.step, v=b.dataset.val;
+      b.classList.toggle('sel',ans[st]===v);
+      b.classList.remove('yes','minor','major');
+      if(ans[st]===v) b.classList.add(v==='no'?'major':v);
+      b.disabled=(st==='lyrics'&&!s2on)||(st==='beat'&&!s3on);
+    });
+    $('n2').hidden=!(ans.lyrics==='minor'||ans.lyrics==='major');
+    $('n3').hidden=!(ans.beat==='minor'||ans.beat==='major');
+    const v=verdictFor(ans); const el=$('verdict');
+    if(!v){el.className='verdict';return;}
+    el.className='verdict show '+v.c;
+    $('vdot').className='dot '+v.c;
+    $('vtext').textContent=v.label+' — '+v.sub;
+    $('vlist').innerHTML=v.flags.map(f=>`<li>${esc(f)}</li>`).join('');
+    $('saveBtn').textContent=editing!==null?'Update track':'Save track to list';
+  }
+
+  document.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    const st=b.dataset.step; ans[st]=b.dataset.val;
+    if(st==='vibe'&&ans.vibe==='no'){ans.lyrics=null;ans.beat=null;}
+    render();
+  }));
+
+  function readForm(){
+    return {name:$('name').value.trim()||'Untitled',bpm:$('bpm').value.trim(),key:$('key').value.trim(),
+      prods:$('prods').value.trim(),feat:$('feat').value.trim(),
+      vibe:ans.vibe,lyrics:ans.lyrics,beat:ans.beat,
+      lyricsNote:$('lyricsNote').value.trim(),beatNote:$('beatNote').value.trim(),gen:$('gen').value.trim()};
+  }
+  function clearForm(){
+    ['name','bpm','key','prods','feat','lyricsNote','beatNote','gen'].forEach(i=>$(i).value='');
+    ans.vibe=ans.lyrics=ans.beat=null; editing=null;
+    $('formTitle').textContent='Track on deck'; render(); $('name').focus();
+  }
+  $('clearBtn').onclick=clearForm;
+
+  $('saveBtn').onclick=()=>{
+    const t=readForm(); const v=verdictFor(t); if(!v) return;
+    t.verdict=v;
+    if(editing!==null){tracks[editing]=t;} else tracks.push(t);
+    toast(editing!==null?'Updated':'Saved — '+v.label);
+    clearForm(); renderList();
+  };
+
+  function renderList(){
+    const L=$('list'); L.innerHTML='';
+    $('emptyMsg').style.display=tracks.length?'none':'block';
+    $('count').textContent=tracks.length?`(${tracks.length})`:'';
+    const groups=[['g','Album ready'],['a','Almost album ready'],['r','Not album ready']];
+    const idxOf=new Map(tracks.map((t,i)=>[t,i]));
+    let g=0,a=0,r=0; tracks.forEach(t=>{t.verdict.c==='g'?g++:t.verdict.c==='a'?a++:r++;});
+    groups.forEach(([c,label])=>{
+      const items=tracks.filter(t=>t.verdict.c===c);
+      if(!items.length) return;
+      const hd=document.createElement('div'); hd.className='grouphd '+c;
+      hd.innerHTML=`<span class="dot ${c}"></span>${esc(label)} <span class="gcount">${items.length}</span>`;
+      L.appendChild(hd);
+      items.forEach(t=>{
+        const i=idxOf.get(t);
+        const meta=[t.bpm&&t.bpm+' bpm',t.key,t.prods,t.feat&&'ft. '+t.feat].filter(Boolean).join(' · ');
+        const flags=t.verdict.flags.length&&t.verdict.flags[0]!=='Cut'?' · '+esc(t.verdict.flags.join(', ')):'';
+        const d=document.createElement('div'); d.className='item';
+        d.innerHTML=`<span class="dot ${t.verdict.c}"></span>
+          <div><div class="t">${esc(t.name)}</div><div class="m">${esc(t.verdict.label)}${flags}${meta?'<br>'+esc(meta):''}</div></div>
+          <div class="acts"><button data-e="${i}">Edit</button><button data-d="${i}">✕</button></div>`;
+        L.appendChild(d);
+      });
+    });
+    $('tg').textContent=g;$('ta').textContent=a;$('tr').textContent=r;
+    L.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>edit(+b.dataset.e));
+    L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ if(confirm('Remove "'+tracks[+b.dataset.d].name+'" from the list?')){tracks.splice(+b.dataset.d,1);renderList();} });
+  }
+  function edit(i){
+    const t=tracks[i]; editing=i;
+    $('name').value=t.name;$('bpm').value=t.bpm;$('key').value=t.key;$('prods').value=t.prods;$('feat').value=t.feat;
+    $('lyricsNote').value=t.lyricsNote;$('beatNote').value=t.beatNote;$('gen').value=t.gen;
+    ans.vibe=t.vibe;ans.lyrics=t.lyrics;ans.beat=t.beat;
+    $('formTitle').textContent='Editing: '+t.name; render(); window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  const lab={yes:'Yes',minor:'Minor tweak',major:'Major',no:'No'};
+  const col={g:'#2e9e5e',a:'#d98a1c',r:'#c93b3b'};
+  $('wordBtn').onclick=()=>{
+    if(!tracks.length){toast('Nothing to export yet');return;}
+    const proj=($('projTitle').value.trim()||'Untitled project');
+    const date=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const g=tracks.filter(t=>t.verdict.c==='g').length,a=tracks.filter(t=>t.verdict.c==='a').length,r=tracks.filter(t=>t.verdict.c==='r').length;
+    const groups=[['g','Album ready'],['a','Almost album ready'],['r','Not album ready']];
+    let h=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Track review</title>
+    <style>body{font-family:Arial;font-size:10pt}h1{font-size:18pt;margin:0}h2{font-size:13pt;margin:16pt 0 4pt;border-bottom:1px solid #ccc;padding-bottom:2pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:4pt 6pt;vertical-align:top;font-size:9pt}th{background:#e7e6e6;text-align:left}.s{color:#666}p.n{margin:4pt 0}</style></head><body>
+    <h1>${esc(proj)} — Track review</h1><p class="s">${date} · ${tracks.length} tracks reviewed · Album ready ${g} · Almost ${a} · Not ready ${r}</p>`;
+    groups.forEach(([c,label])=>{
+      const items=tracks.filter(t=>t.verdict.c===c);
+      if(!items.length) return;
+      h+=`<h2 style="color:${col[c]}">${label} (${items.length})</h2>`;
+      h+=`<table><tr><th>Track</th><th>BPM</th><th>Key</th><th>Co-producers</th><th>Feature</th><th>Action needed</th></tr>`;
+      items.forEach(t=>{h+=`<tr><td><b>${esc(t.name)}</b></td><td>${esc(t.bpm)}</td><td>${esc(t.key)}</td><td>${esc(t.prods)}</td><td>${esc(t.feat)}</td><td>${esc(t.verdict.flags.join('; '))||'—'}</td></tr>`;});
+      h+=`</table>`;
+      items.forEach(t=>{h+=`<p class="n"><b>${esc(t.name)}</b> — Vibe: ${lab[t.vibe]||'—'} · Lyrics: ${lab[t.lyrics]||'—'}${t.lyricsNote?' ('+esc(t.lyricsNote)+')':''} · Beat: ${lab[t.beat]||'—'}${t.beatNote?' ('+esc(t.beatNote)+')':''}${t.gen?'<br>Notes: '+esc(t.gen):''}</p>`;});
+    });
+    h+=`</body></html>`;
+    dl(new Blob(['\ufeff',h],{type:'application/msword'}),esc(proj).replace(/[^a-z0-9]+/gi,'_')+'_Track_Review_'+stamp()+'.doc');
+    toast('Word file downloaded');
+  };
+  $('jsonBtn').onclick=()=>{ if(!tracks.length){toast('Nothing to save yet');return;} dl(new Blob([JSON.stringify({project:$('projTitle').value.trim(),tracks},null,2)],{type:'application/json'}),'track_review_session_'+stamp()+'.json'); toast('Session saved'); };
+  $('loadBtn').onclick=()=>$('loadFile').click();
+  $('loadFile').onchange=e=>{const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{try{const d=JSON.parse(rd.result); if(!Array.isArray(d.tracks))throw 0; if(d.project&&!$('projTitle').value.trim())$('projTitle').value=d.project; tracks=tracks.concat(d.tracks); renderList(); toast('Loaded '+d.tracks.length+' tracks');}catch{toast('That file isn\'t a saved session');} e.target.value='';}; rd.readAsText(f);};
+  $('resetBtn').onclick=()=>{ if(!tracks.length){clearForm();return;} if(confirm('Start a new project? Unsaved tracks will be lost — export to Word or save the session first.')){tracks=[];clearForm();renderList();toast('Reset');} };
+
+  function dl(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+  function stamp(){return new Date().toISOString().slice(0,10);}
+  function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  let tt;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),1800);}
+
+  render(); renderList();
+})();
+</script>
+</body>
+</html>
